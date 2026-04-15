@@ -28,25 +28,28 @@ async def images_to_pdf(files: list[UploadFile] = File(...)):
 
 @router.post("/merge-pdf")
 async def merge_pdfs(files: list[UploadFile] = File(...)):
-    """Merge multiple PDFs into one"""
     try:
         if len(files) < 2:
             raise HTTPException(400, "Need at least 2 PDFs to merge")
-        
+
         pdf_bytes_list = []
         for file in files:
-            if not file.content_type == "application/pdf":
-                raise HTTPException(400, "Only PDF files allowed")
             content = await file.read()
+            print(f"{file.filename} size:", len(content))  # 👈 DEBUG
             pdf_bytes_list.append(content)
-        
+
         merged_bytes = PDFProcessor.merge_pdfs(pdf_bytes_list)
-        
+        print("Merged size:", len(merged_bytes))  # 👈 DEBUG
+
         return StreamingResponse(
             io.BytesIO(merged_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=merged.pdf"}
         )
+
+    except Exception as e:
+        print("ERROR:", str(e))  # 👈 DEBUG
+        raise HTTPException(500, f"Merge failed: {str(e)}")
     except Exception as e:
         raise HTTPException(500, f"Merge failed: {str(e)}")
 
