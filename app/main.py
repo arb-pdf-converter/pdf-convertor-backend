@@ -73,10 +73,10 @@ async def compress_pdf(
     level: Literal["30", "50", "80"] = "50"
 ):
 
-    if file.content_type != "application/pdf":
-        raise HTTPException(400, "Only PDF files allowed")
-
     content = await file.read()
+
+    if len(content) < 1000:
+        raise HTTPException(400, "Invalid PDF file")
 
     reader = PdfReader(BytesIO(content))
     writer = PdfWriter()
@@ -86,10 +86,15 @@ async def compress_pdf(
 
     output = BytesIO()
     writer.write(output)
+
     output.seek(0)
+    pdf_bytes = output.getvalue()
+
+    if len(pdf_bytes) < 1000:
+        raise HTTPException(500, "Compression failed (empty output)")
 
     return Response(
-        content=output.read(),
+        content=pdf_bytes,
         media_type="application/pdf",
         headers={
             "Content-Disposition": "attachment; filename=compressed.pdf"
