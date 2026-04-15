@@ -65,18 +65,36 @@ async def images_to_pdf(files: list[UploadFile] = File(...)):
     if len(files) == 0:
         raise HTTPException(400, "No images uploaded")
 
-    images_bytes = []
+    images = []
 
     for file in files:
         content = await file.read()
 
         if len(content) < 100:
-            raise HTTPException(400, f"{file.filename} is empty")
+            raise HTTPException(400, f"{file.filename} is empty or invalid")
 
-        images_bytes.append(content)
+        try:
+            img = Image.open(BytesIO(content))
+            img = img.convert("RGB")  # IMPORTANT
+            images.append(img)
+        except Exception:
+            raise HTTPException(400, f"{file.filename} is not a valid image")
 
-    # IMPORTANT: img2pdf needs raw bytes list
-    pdf_bytes = img2pdf.convert(images_bytes)
+    if len(images) == 0:
+        raise HTTPException(400, "No valid images found")
+
+    output = BytesIO()
+
+    # FIRST image is base
+    images[0].save(
+        output,
+        format="PDF",
+        save_all=True,
+        append_images=images[1:]
+    )
+
+    output.seek(0)
+    pdf_bytes = output.read()
 
     if len(pdf_bytes) < 1000:
         raise HTTPException(500, "PDF generation failed")
