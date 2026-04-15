@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from pypdf import PdfReader, PdfWriter
 from io import BytesIO
+import img2pdf
 
 app = FastAPI()
 
@@ -56,4 +57,38 @@ async def merge(files: list[UploadFile] = File(...)):
         headers={
             "Content-Disposition": "attachment; filename=merged.pdf"
         }
+____________________________________________________________________________________________
+ 
+@app.post("/images-to-pdf")
+async def images_to_pdf(files: list[UploadFile] = File(...)):
+
+    if len(files) == 0:
+        raise HTTPException(400, "No images uploaded")
+
+    images_bytes = []
+
+    for file in files:
+        content = await file.read()
+
+        if len(content) < 100:
+            raise HTTPException(400, f"{file.filename} is empty")
+
+        images_bytes.append(content)
+
+    # IMPORTANT: img2pdf needs raw bytes list
+    pdf_bytes = img2pdf.convert(images_bytes)
+
+    if len(pdf_bytes) < 1000:
+        raise HTTPException(500, "PDF generation failed")
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=images.pdf"
+        }
+    )
+____________________________________________________________________________________________
+
+
     )
