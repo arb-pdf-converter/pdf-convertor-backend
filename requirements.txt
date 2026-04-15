@@ -4,5 +4,4 @@ gunicorn==21.2.0
 pypdf==4.2.0
 python-multipart==0.0.9
 Pillow==10.3.0
-img2pdf
-reportlab
+
