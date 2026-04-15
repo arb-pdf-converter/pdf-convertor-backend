@@ -15,27 +15,43 @@ def health():
 
 @app.post("/merge")
 async def merge(files: list[UploadFile] = File(...)):
+
     if len(files) < 2:
         raise HTTPException(400, "Need at least 2 PDFs")
 
     writer = PdfWriter()
 
-    for file in files:
-        if file.content_type != "application/pdf":
-            raise HTTPException(400, "Only PDF files allowed")
+    total_pages = 0  # 👈 DEBUG SAFETY
 
+    for file in files:
         content = await file.read()
+
+        if len(content) < 100:
+            raise HTTPException(400, f"{file.filename} is empty or invalid")
+
         reader = PdfReader(BytesIO(content))
+
+        if len(reader.pages) == 0:
+            raise HTTPException(400, f"{file.filename} has 0 pages")
 
         for page in reader.pages:
             writer.add_page(page)
+            total_pages += 1
+
+    if total_pages == 0:
+        raise HTTPException(400, "No pages found in PDFs")
 
     output = BytesIO()
     writer.write(output)
     output.seek(0)
 
+    pdf_data = output.read()
+
+    if len(pdf_data) < 1000:
+        raise HTTPException(500, "Generated PDF is invalid")
+
     return Response(
-        content=output.read(),
+        content=pdf_data,
         media_type="application/pdf",
         headers={
             "Content-Disposition": "attachment; filename=merged.pdf"
