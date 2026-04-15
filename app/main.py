@@ -1,28 +1,43 @@
-from flask import Flask, request, send_file, jsonify
-from PyPDF2 import PdfMerger
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import Response
+from pypdf import PdfReader, PdfWriter
 from io import BytesIO
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/')
+@app.get("/")
 def hello():
-    return "PDF API Working!"
+    return {"message": "PDF API Working!"}
 
-@app.route('/health')
+@app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.route('/merge', methods=['POST'])
-def merge():
-    files = request.files.getlist('files')
-    merger = PdfMerger()
-    for f in files:
-        merger.append(f)
-    bio = BytesIO()
-    merger.write(bio)
-    bio.seek(0)
-    return send_file(bio, mimetype='application/pdf', 
-                    as_attachment=True, download_name='merged.pdf')
+@app.post("/merge")
+async def merge(files: list[UploadFile] = File(...)):
+    if len(files) < 2:
+        raise HTTPException(400, "Need at least 2 PDFs")
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    writer = PdfWriter()
+
+    for file in files:
+        if file.content_type != "application/pdf":
+            raise HTTPException(400, "Only PDF files allowed")
+
+        content = await file.read()
+        reader = PdfReader(BytesIO(content))
+
+        for page in reader.pages:
+            writer.add_page(page)
+
+    output = BytesIO()
+    writer.write(output)
+    output.seek(0)
+
+    return Response(
+        content=output.read(),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=merged.pdf"
+        }
+    )
