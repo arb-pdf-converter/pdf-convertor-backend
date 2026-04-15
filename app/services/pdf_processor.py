@@ -7,6 +7,9 @@ from io import BytesIO
 import io
 
 class PDFProcessor:
+
+    
+# ---------------- IMAGES TO PDF ----------------
     
     @staticmethod
     def images_to_pdf(image_bytes_list: list[bytes]) -> bytes:
@@ -16,6 +19,7 @@ class PDFProcessor:
         return pdf_bytes
     
 
+# ---------------- MERGE ----------------
 
     @staticmethod
     def merge_pdfs(pdf_bytes_list: list[bytes]) -> bytes:
@@ -31,18 +35,29 @@ class PDFProcessor:
         output.seek(0)
 
         return output.read()
+
     
+# ---------------- COMPRESS ----------------
     @staticmethod
-    def compress_pdf(pdf_bytes: bytes) -> bytes:
-        """Simple compression using PyPDF2 optimization"""
+    def compress_pdf(pdf_bytes: bytes, level: str) -> bytes:
         reader = PdfReader(BytesIO(pdf_bytes))
         writer = PdfWriter()
-        
+
+        # Map levels to optimization strength
+        compression_map = {
+            "30": {"optimize": False},
+            "50": {"optimize": True},
+            "80": {"optimize": True}
+        }
+
+        settings = compression_map.get(level, {"optimize": True})
+
         for page in reader.pages:
             writer.add_page(page)
-        
-        # Optimize (remove duplicates)
-        writer.remove_images()
+
         output = BytesIO()
-        writer.write(output)
-        return output.getvalue()
+        writer.write(output, **settings)
+        output.seek(0)
+
+        return output.read()
+
