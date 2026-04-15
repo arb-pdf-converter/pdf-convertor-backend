@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 import io
 from app.services.pdf_processor import PDFProcessor
+from fastapi.responses import Response
 
 router = APIRouter()
 
@@ -41,10 +42,12 @@ async def merge_pdfs(files: list[UploadFile] = File(...)):
         merged_bytes = PDFProcessor.merge_pdfs(pdf_bytes_list)
         print("Merged size:", len(merged_bytes))  # 👈 DEBUG
 
-        return StreamingResponse(
-            io.BytesIO(merged_bytes),
+        return Response(
+            content=merged_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": "attachment; filename=merged.pdf"}
+            headers={
+                "Content-Disposition": "attachment; filename=merged.pdf"
+            }
         )
 
     except Exception as e:
