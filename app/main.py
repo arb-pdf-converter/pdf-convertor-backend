@@ -92,7 +92,10 @@ async def compress_pdf(
 
     if len(pdf_bytes) < 1000:
         raise HTTPException(500, "Compression failed (empty output)")
-
+    
+    print(len(content))
+    print(len(pdf_bytes))
+    
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
