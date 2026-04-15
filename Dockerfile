@@ -1,25 +1,16 @@
 FROM python:3.11
 
-RUN apt-get update && apt-get install -y \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libtiff5-dev \
-    libwebp-dev \
-    libopenjp2-7-dev \
-    libfreetype6-dev \
-    liblcms2-dev \
-    libharfbuzz-dev \
-    libfribidi-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
+# Install system deps for Pillow
+RUN apt-get update && apt-get install -y \
+    libjpeg-dev libpng-dev libtiff-dev libwebp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 10000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+EXPOSE $PORT
+CMD ["gunicorn", "main:app", "-b", "0.0.0.0:$PORT"]
