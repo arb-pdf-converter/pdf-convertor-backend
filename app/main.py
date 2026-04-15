@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from pypdf import PdfReader, PdfWriter
+from typing import Literal
 from PIL import Image
 from io import BytesIO
 
@@ -63,4 +64,34 @@ async def images_to_pdf(files: list[UploadFile] = File(...)):
         content=output.read(),
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=images.pdf"}
+    )
+
+# ---------------- COMPRESS PDF ----------------
+@app.post("/compress-pdf")
+async def compress_pdf(
+    file: UploadFile = File(...),
+    level: Literal["30", "50", "80"] = "50"
+):
+
+    if file.content_type != "application/pdf":
+        raise HTTPException(400, "Only PDF files allowed")
+
+    content = await file.read()
+
+    reader = PdfReader(BytesIO(content))
+    writer = PdfWriter()
+
+    for page in reader.pages:
+        writer.add_page(page)
+
+    output = BytesIO()
+    writer.write(output)
+    output.seek(0)
+
+    return Response(
+        content=output.read(),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=compressed.pdf"
+        }
     )
