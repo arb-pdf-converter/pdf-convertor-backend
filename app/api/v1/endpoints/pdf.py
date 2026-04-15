@@ -1,3 +1,4 @@
+from typing import Literal
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 import io
@@ -6,6 +7,7 @@ from fastapi.responses import Response
 
 router = APIRouter()
 
+# ---------------- IMAGES TO PDF ----------------
 @router.post("/images-to-pdf")
 async def images_to_pdf(files: list[UploadFile] = File(...)):
     """Convert multiple images to single PDF"""
@@ -27,6 +29,8 @@ async def images_to_pdf(files: list[UploadFile] = File(...)):
     except Exception as e:
         raise HTTPException(500, f"Conversion failed: {str(e)}")
 
+
+# ---------------- MERGE ----------------
 @router.post("/merge-pdf")
 async def merge_pdfs(files: list[UploadFile] = File(...)):
     try:
@@ -71,5 +75,33 @@ async def compress_pdf(file: UploadFile = File(...), level: int = 4):
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=compressed.pdf"}
         )
+    except Exception as e:
+        raise HTTPException(500, f"Compression failed: {str(e)}")
+
+
+# ---------------- COMPRESS ----------------
+@router.post("/compress-pdf")
+async def compress_pdf(
+    file: UploadFile = File(...),
+    level: Literal["30", "50", "80"] = "50"
+):
+    """Compress single PDF with predefined levels"""
+
+    try:
+        if file.content_type != "application/pdf":
+            raise HTTPException(400, "Only PDF files allowed")
+
+        content = await file.read()
+
+        compressed_bytes = PDFProcessor.compress_pdf(content, level)
+
+        return Response(
+            content=compressed_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": "attachment; filename=compressed.pdf"
+            }
+        )
+
     except Exception as e:
         raise HTTPException(500, f"Compression failed: {str(e)}")
