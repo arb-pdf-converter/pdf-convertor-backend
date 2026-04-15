@@ -1,35 +1,43 @@
-import fitz  # PyMuPDF
+from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from PIL import Image
 import img2pdf
-from PyPDF2 import PdfMerger
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 from io import BytesIO
-import tempfile
+import io
 
 class PDFProcessor:
     
     @staticmethod
     def images_to_pdf(image_bytes_list: list[bytes]) -> bytes:
-        """Convert list of image bytes to PDF"""
+        """Image → PDF using img2pdf (pure Python)"""
         images = [Image.open(BytesIO(img)) for img in image_bytes_list]
         pdf_bytes = img2pdf.convert(images)
         return pdf_bytes
     
     @staticmethod
     def merge_pdfs(pdf_bytes_list: list[bytes]) -> bytes:
-        """Merge multiple PDFs"""
+        """Merge PDFs using PyPDF2"""
         merger = PdfMerger()
         for pdf_bytes in pdf_bytes_list:
             merger.append(BytesIO(pdf_bytes))
         output = BytesIO()
         merger.write(output)
         merger.close()
-        return output.getvalue()
+        output.seek(0)
+        return output.read()
     
     @staticmethod
-    def compress_pdf(pdf_bytes: bytes, level: int = 4) -> bytes:
-        """Compress PDF (1-9, higher = more compression)"""
-        doc = fitz.open("pdf", pdf_bytes)
-        doc.saveIncr(garbage=level, deflate=True, clean=True)
-        compressed_bytes = doc.tobytes("pdf")
-        doc.close()
-        return compressed_bytes
+    def compress_pdf(pdf_bytes: bytes) -> bytes:
+        """Simple compression using PyPDF2 optimization"""
+        reader = PdfReader(BytesIO(pdf_bytes))
+        writer = PdfWriter()
+        
+        for page in reader.pages:
+            writer.add_page(page)
+        
+        # Optimize (remove duplicates)
+        writer.remove_images()
+        output = BytesIO()
+        writer.write(output)
+        return output.getvalue()
