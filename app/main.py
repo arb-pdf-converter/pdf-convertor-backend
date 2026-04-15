@@ -56,7 +56,7 @@ async def merge(files: list[UploadFile] = File(...)):
         media_type="application/pdf",
         headers={
             "Content-Disposition": "attachment; filename=merged.pdf"
-        }
+        })
 ____________________________________________________________________________________________
  
 @app.post("/images-to-pdf")
