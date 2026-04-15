@@ -57,7 +57,7 @@ async def merge(files: list[UploadFile] = File(...)):
         headers={
             "Content-Disposition": "attachment; filename=merged.pdf"
         })
-____________________________________________________________________________________________
+#____________________________________________________________________________________________
  
 @app.post("/images-to-pdf")
 async def images_to_pdf(files: list[UploadFile] = File(...)):
@@ -106,7 +106,7 @@ async def images_to_pdf(files: list[UploadFile] = File(...)):
             "Content-Disposition": "attachment; filename=images.pdf"
         }
     )
-____________________________________________________________________________________________
+#____________________________________________________________________________________________
 
 
     
