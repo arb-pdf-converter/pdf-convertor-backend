@@ -1,19 +1,20 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from pypdf import PdfReader, PdfWriter
+from PIL import Image
 from io import BytesIO
-import img2pdf
 
 app = FastAPI()
 
 @app.get("/")
-def hello():
-    return {"message": "PDF API Working!"}
+def root():
+    return {"message": "PDF API Working"}
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+# ---------------- MERGE PDFs ----------------
 @app.post("/merge")
 async def merge(files: list[UploadFile] = File(...)):
 
@@ -22,43 +23,25 @@ async def merge(files: list[UploadFile] = File(...)):
 
     writer = PdfWriter()
 
-    total_pages = 0  # 👈 DEBUG SAFETY
-
     for file in files:
         content = await file.read()
-
-        if len(content) < 100:
-            raise HTTPException(400, f"{file.filename} is empty or invalid")
-
         reader = PdfReader(BytesIO(content))
-
-        if len(reader.pages) == 0:
-            raise HTTPException(400, f"{file.filename} has 0 pages")
 
         for page in reader.pages:
             writer.add_page(page)
-            total_pages += 1
-
-    if total_pages == 0:
-        raise HTTPException(400, "No pages found in PDFs")
 
     output = BytesIO()
     writer.write(output)
     output.seek(0)
 
-    pdf_data = output.read()
-
-    if len(pdf_data) < 1000:
-        raise HTTPException(500, "Generated PDF is invalid")
-
     return Response(
-        content=pdf_data,
+        content=output.read(),
         media_type="application/pdf",
-        headers={
-            "Content-Disposition": "attachment; filename=merged.pdf"
-        })
-#____________________________________________________________________________________________
- 
+        headers={"Content-Disposition": "attachment; filename=merged.pdf"}
+    )
+
+
+# ---------------- IMAGES TO PDF ----------------
 @app.post("/images-to-pdf")
 async def images_to_pdf(files: list[UploadFile] = File(...)):
 
@@ -69,44 +52,15 @@ async def images_to_pdf(files: list[UploadFile] = File(...)):
 
     for file in files:
         content = await file.read()
-
-        if len(content) < 100:
-            raise HTTPException(400, f"{file.filename} is empty or invalid")
-
-        try:
-            img = Image.open(BytesIO(content))
-            img = img.convert("RGB")  # IMPORTANT
-            images.append(img)
-        except Exception:
-            raise HTTPException(400, f"{file.filename} is not a valid image")
-
-    if len(images) == 0:
-        raise HTTPException(400, "No valid images found")
+        img = Image.open(BytesIO(content)).convert("RGB")
+        images.append(img)
 
     output = BytesIO()
-
-    # FIRST image is base
-    images[0].save(
-        output,
-        format="PDF",
-        save_all=True,
-        append_images=images[1:]
-    )
-
+    images[0].save(output, format="PDF", save_all=True, append_images=images[1:])
     output.seek(0)
-    pdf_bytes = output.read()
-
-    if len(pdf_bytes) < 1000:
-        raise HTTPException(500, "PDF generation failed")
 
     return Response(
-        content=pdf_bytes,
+        content=output.read(),
         media_type="application/pdf",
-        headers={
-            "Content-Disposition": "attachment; filename=images.pdf"
-        }
+        headers={"Content-Disposition": "attachment; filename=images.pdf"}
     )
-#____________________________________________________________________________________________
-
-
-    
