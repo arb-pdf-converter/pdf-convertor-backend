@@ -1,4 +1,4 @@
-from PyPDF2 import PdfMerger, PdfReader, PdfWriter
+from pypdf import PdfReader, PdfWriter
 from PIL import Image
 import img2pdf
 from reportlab.pdfgen import canvas
