@@ -1,11 +1,12 @@
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
-pymupdf==1.23.8        # PDF processing
-pillow==10.1.0          # Images
-img2pdf==0.5.1          # Image to PDF
-PyPDF2==3.0.1           # PDF merge
+pymupdf==1.23.8          # Stable version
+Pillow==10.1.0
+img2pdf==0.5.1
+PyPDF2==3.0.1
 python-dotenv==1.0.0
 pydantic==2.5.0
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+pydantic-settings==2.1.0
+wheel==0.42.0
+setuptools==69.0.3
