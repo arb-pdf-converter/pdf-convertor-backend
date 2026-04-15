@@ -1,3 +1,4 @@
+raise Exception("🔥 THIS FILE IS RUNNING")
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from pypdf import PdfReader, PdfWriter
