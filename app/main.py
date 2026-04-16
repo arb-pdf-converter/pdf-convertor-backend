@@ -1,4 +1,3 @@
-raise Exception("🔥 THIS FILE IS RUNNING")
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from pypdf import PdfReader, PdfWriter
@@ -73,7 +72,7 @@ async def compress_pdf(
     file: UploadFile = File(...),
     level: Literal["30", "50", "80"] = "50"
 ):
-
+    print("🔥 COMPRESS HIT")
     content = await file.read()
 
     if len(content) < 1000:
