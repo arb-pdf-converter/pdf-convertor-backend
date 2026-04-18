@@ -72,34 +72,38 @@ class PDFProcessor:
             
                 # Ghostscript command
                 cmd = [
-                    "gs",
-                    "-sDEVICE=pdfwrite",
-                    "-dCompatibilityLevel=1.4",
-                    "-dNOPAUSE",
-                    "-dBATCH",
-                    "-dSAFER",
+    "gs",
+    "-sDEVICE=pdfwrite",
+    "-dCompatibilityLevel=1.4",
+    "-dNOPAUSE",
+    "-dBATCH",
+    "-dSAFER",
 
-                # 🔥 FORCE real compression
-                    "-dDetectDuplicateImages=true",
-                    "-dCompressFonts=true",
-                    "-dSubsetFonts=true",
+    # 🔥 FORCE IMAGE COMPRESSION (THIS IS WHAT YOU MISSED)
+    "-dDetectDuplicateImages=true",
+    "-dCompressFonts=true",
+    "-dSubsetFonts=true",
 
-                # 🔥 Image compression
-                    "-dDownsampleColorImages=true",
-                    "-dDownsampleGrayImages=true",
-                    "-dDownsampleMonoImages=true",
+    # 🔥 IMAGE DOWNSAMPLING (CRITICAL)
+    "-dDownsampleColorImages=true",
+    "-dDownsampleGrayImages=true",
+    "-dDownsampleMonoImages=true",
 
-                    "-dColorImageDownsampleType=/Bicubic",
-                    "-dGrayImageDownsampleType=/Bicubic",
-                    "-dMonoImageDownsampleType=/Bicubic",
+    "-dColorImageDownsampleType=/Bicubic",
+    "-dGrayImageDownsampleType=/Bicubic",
+    "-dMonoImageDownsampleType=/Subsample",
 
-                    f"-dColorImageResolution={resolution}",
-                    f"-dGrayImageResolution={resolution}",
-                    f"-dMonoImageResolution={resolution}",
+    # 🔥 AGGRESSIVE QUALITY CONTROL
+    "-dColorImageResolution=72",
+    "-dGrayImageResolution=72",
+    "-dMonoImageResolution=300",
 
-                    f"-sOutputFile={output_path}",
-                    input_path
-                ]
+    # 🔥 REMOVE HIGH QUALITY IMAGES
+    "-dJPEGQ=40",
+
+    f"-sOutputFile={output_path}",
+    input_path
+]
                 # Execute
                 result = subprocess.run(
                     cmd, 
