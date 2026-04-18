@@ -1,5 +1,6 @@
 import subprocess
 import tempfile
+import uuid
 from pypdf import PdfReader, PdfWriter
 from PIL import Image
 import img2pdf
@@ -41,36 +42,28 @@ class PDFProcessor:
     
 # ---------------- COMPRESS ----------------
     @staticmethod
-    def compress_pdf(self, input_path: str, output_path: str, quality: int = 50) -> str:
-    try:
-        settings = {30: '/screen', 50: '/ebook', 80: '/printer', 100: '/prepress'}
-        gs_setting = settings.get(quality, '/ebook')
+    def compress_pdf(input_path: str, quality: str = "ebook"):
+    output_path = f"/tmp/compressed_{uuid.uuid4().hex}.pdf"
 
-        print(f"🔄 Ghostscript {gs_setting} ({quality}%)...")
+    quality_map = {
+        "screen": "/screen",
+        "ebook": "/ebook",
+        "printer": "/printer",
+        "prepress": "/prepress"
+    }
 
-        cmd = [
-            "gs",   # ✅ Render/Linux
-            "-sDEVICE=pdfwrite",
-            f"-dPDFSETTINGS={gs_setting}",
-            "-dCompatibilityLevel=1.4",
-            "-dNOPAUSE",
-            "-dQUIET",
-            "-dBATCH",
-            f"-sOutputFile={output_path}",
-            input_path
-        ]
+    cmd = [
+        "gs",
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.4",
+        f"-dPDFSETTINGS={quality_map.get(quality, '/ebook')}",
+        "-dNOPAUSE",
+        "-dBATCH",
+        "-dQUIET",
+        f"-sOutputFile={output_path}",
+        input_path
+    ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    subprocess.run(cmd, check=True)
 
-        if result.returncode != 0:
-            print("❌ GS ERROR:", result.stderr)
-
-        if os.path.exists(output_path):
-            print(f"✅ SUCCESS {gs_setting}!")
-            return output_path
-        else:
-            raise Exception("Output not created")
-
-    except Exception as e:
-        print(f"❌ FAILED: {e}")
-        return input_path
+    return output_path
