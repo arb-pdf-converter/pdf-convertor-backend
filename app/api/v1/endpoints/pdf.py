@@ -86,22 +86,22 @@ async def compress_pdf(
     level: Literal["30", "50", "80"] = "50"
 ):
     """Compress single PDF with predefined levels"""
-
     try:
         if file.content_type != "application/pdf":
             raise HTTPException(400, "Only PDF files allowed")
 
         content = await file.read()
-
+        print(f"Original size: {len(content) / 1024:.1f} KB")  # 👈 DEBUG
+        
         compressed_bytes = PDFProcessor.compress_pdf(content, level)
-
+        print(f"Compressed size: {len(compressed_bytes) / 1024:.1f} KB")  # 👈 DEBUG
+        
         return Response(
             content=compressed_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": "attachment; filename=compressed.pdf"
+                "Content-Disposition": f"attachment; filename=compressed_{level}.pdf"
             }
         )
-
     except Exception as e:
         raise HTTPException(500, f"Compression failed: {str(e)}")
