@@ -65,30 +65,43 @@ class PDFProcessor:
 
         return output_path
 
-    def final_optimize(input_path):
-        output_path = f"/tmp/final_{uuid.uuid4().hex}.pdf"
+    def compress_pdf(input_path: str):
+    output_path = f"/tmp/compressed_{uuid.uuid4().hex}.pdf"
 
-        cmd = [
-            "gs",
-            "-sDEVICE=pdfwrite",
-            "-dCompatibilityLevel=1.4",
+    cmd = [
+        "gs",
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.4",
 
-            # 🔥 final compression pass
-            "-dPDFSETTINGS=/screen",
+        # 🔥 real aggressive compression
+        "-dPDFSETTINGS=/screen",
 
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
+        "-dDownsampleColorImages=true",
+        "-dColorImageResolution=72",
 
-            f"-sOutputFile={output_path}",
-            input_path
-        ]
+        "-dDownsampleGrayImages=true",
+        "-dGrayImageResolution=72",
 
-        subprocess.run(cmd, check=True)
-        return output_path
+        "-dDownsampleMonoImages=true",
+        "-dMonoImageResolution=72",
 
-    def compress_pdf(input_path):
-        step1 = compress_pdfs(input_path, "/tmp/step1.pdf")
-        step2 = final_optimize(step1)
-        return step2
+        "-dDetectDuplicateImages=true",
+        "-dCompressFonts=true",
+        "-dSubsetFonts=true",
+
+        "-dNOPAUSE",
+        "-dBATCH",
+        "-dQUIET",
+
+        f"-sOutputFile={output_path}",
+        input_path
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print("ERROR:", result.stderr)
+        raise Exception("Ghostscript failed")
+
+    return output_path
     
