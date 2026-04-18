@@ -41,80 +41,36 @@ class PDFProcessor:
     
 # ---------------- COMPRESS ----------------
     @staticmethod
-    def compress_pdf(pdf_bytes: bytes, level: str) -> bytes:
-        """Ghostscript with proper error handling"""
-        import os
-        import tempfile
-        import subprocess
-    
-        try:
-            # Ghostscript settings
-            gs_settings = {
-                "30": "/screen",     # 72 DPI
-                "50": "/ebook",      # 150 DPI  
-                "80": "/printer"     # 300 DPI
-            }
-            if level == "30":
-                resolution = "72"
-            elif level == "50":
-                resolution = "150"
-            else:
-                resolution = "300"
-        
-            # Create secure temp directory
-            with tempfile.TemporaryDirectory() as temp_dir:
-                input_path = os.path.join(temp_dir, "input.pdf")
-                output_path = os.path.join(temp_dir, "output.pdf")
-            
-                # Write input
-                with open(input_path, "wb") as f:
-                    f.write(pdf_bytes)
-            
-                # Ghostscript command
-                cmd = [
-                    "/usr/bin/gs",
-                    "-sDEVICE=pdfwrite",
-                    "-dNOPAUSE",
-                    "-dBATCH",
-                    "-dSAFER",
-                    "-sOutputFile=output.pdf",
-                    input_path
-                ]
-                # Execute
-                result = subprocess.run(
-                    cmd, 
-                    capture_output=True, 
-                    text=True,
-                    timeout=60
-                )
-            
-                # Check output file exists and has size
-                if not os.path.exists(output_path):
-                    print("❌ Ghostscript: No output file")
-                    return pdf_bytes
-            
-                output_size = os.path.getsize(output_path)
-                if output_size < 1024:  # Less than 1KB = failed
-                    print("❌ Ghostscript: Output too small")
-                    return pdf_bytes
+    def compress_pdf(self, input_path: str, output_path: str, quality: int = 50) -> str:
+    try:
+        settings = {30: '/screen', 50: '/ebook', 80: '/printer', 100: '/prepress'}
+        gs_setting = settings.get(quality, '/ebook')
 
-                elif output_size >= len(pdf_bytes):
-                    print("⚠️ No compression achieved")
-                    return pdf_bytes
-            
-                # Read result
-                with open(output_path, "rb") as f:
-                    compressed_bytes = f.read()
-            
-                orig_size = len(pdf_bytes) / (1024*1024)
-                new_size = len(compressed_bytes) / (1024*1024)
-            
-                print(f"🎉 SUCCESS {level}: {orig_size:.1f}MB → {new_size:.1f}MB")
-                return compressed_bytes
-            
-        except subprocess.TimeoutExpired:
-            print("⏰ Ghostscript timeout")
-            return pdf_bytes
-        except Exception as e:
-            print(f"❌ Error: {e}")
-            return pdf_bytes
+        print(f"🔄 Ghostscript {gs_setting} ({quality}%)...")
+
+        cmd = [
+            "gs",   # ✅ Render/Linux
+            "-sDEVICE=pdfwrite",
+            f"-dPDFSETTINGS={gs_setting}",
+            "-dCompatibilityLevel=1.4",
+            "-dNOPAUSE",
+            "-dQUIET",
+            "-dBATCH",
+            f"-sOutputFile={output_path}",
+            input_path
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+
+        if result.returncode != 0:
+            print("❌ GS ERROR:", result.stderr)
+
+        if os.path.exists(output_path):
+            print(f"✅ SUCCESS {gs_setting}!")
+            return output_path
+        else:
+            raise Exception("Output not created")
+
+    except Exception as e:
+        print(f"❌ FAILED: {e}")
+        return input_path
