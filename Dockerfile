@@ -1,12 +1,13 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    ghostscript \     # 👈 REAL COMPRESSION
-    libjpeg-dev \
-    zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+RUN apt-get update && \
+    apt-get install -y \
+        gcc \
+        ghostscript \
+        libjpeg-dev \
+        zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
 
 WORKDIR /app
 
