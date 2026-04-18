@@ -117,6 +117,10 @@ class PDFProcessor:
                 if output_size < 1024:  # Less than 1KB = failed
                     print("❌ Ghostscript: Output too small")
                     return pdf_bytes
+
+                elif output_size >= len(pdf_bytes):
+                    print("⚠️ No compression achieved")
+                    return pdf_bytes
             
                 # Read result
                 with open(output_path, "rb") as f:
