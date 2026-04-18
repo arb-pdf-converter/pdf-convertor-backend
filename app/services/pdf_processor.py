@@ -79,12 +79,18 @@ class PDFProcessor:
     "-dBATCH",
     "-dSAFER",
 
-    # 🔥 FORCE IMAGE COMPRESSION (THIS IS WHAT YOU MISSED)
+    # 🔥 FORCE FULL REWRITE (VERY IMPORTANT)
     "-dDetectDuplicateImages=true",
     "-dCompressFonts=true",
     "-dSubsetFonts=true",
 
-    # 🔥 IMAGE DOWNSAMPLING (CRITICAL)
+    # 🔥 FORCE IMAGE RECOMPRESSION
+    "-dAutoFilterColorImages=false",
+    "-dAutoFilterGrayImages=false",
+    "-dColorImageFilter=/DCTEncode",
+    "-dGrayImageFilter=/DCTEncode",
+
+    # 🔥 DOWN-SAMPLE IMAGES
     "-dDownsampleColorImages=true",
     "-dDownsampleGrayImages=true",
     "-dDownsampleMonoImages=true",
@@ -93,13 +99,12 @@ class PDFProcessor:
     "-dGrayImageDownsampleType=/Bicubic",
     "-dMonoImageDownsampleType=/Subsample",
 
-    # 🔥 AGGRESSIVE QUALITY CONTROL
     "-dColorImageResolution=72",
     "-dGrayImageResolution=72",
     "-dMonoImageResolution=300",
 
-    # 🔥 REMOVE HIGH QUALITY IMAGES
-    "-dJPEGQ=40",
+    # 🔥 JPEG QUALITY (THIS MATTERS A LOT)
+    "-dJPEGQ=30",
 
     f"-sOutputFile={output_path}",
     input_path
