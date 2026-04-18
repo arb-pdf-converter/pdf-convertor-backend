@@ -88,7 +88,7 @@ class PDFProcessor:
         return output_path
 
     def compress_pdf(input_path):
-        step1 = compress_pdf_ilovepdf(input_path, "/tmp/step1.pdf")
+        step1 = compress_pdfs(input_path, "/tmp/step1.pdf")
         step2 = final_optimize(step1)
         return step2
     
