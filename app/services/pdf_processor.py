@@ -42,48 +42,53 @@ class PDFProcessor:
     
 # ---------------- COMPRESS ----------------
     @staticmethod
-    def compress_pdf(input_path: str, quality: str = "ebook"):
-    output_path = f"/tmp/compressed_{uuid.uuid4().hex}.pdf"
+    def recompress_image(data):
+        img = Image.open(BytesIO(data))
 
-    quality_map = {
-        "screen": "/screen",
-        "ebook": "/ebook",
-        "printer": "/printer",
-        "prepress": "/prepress"
-    }
+        if img.mode != "RGB":
+            img = img.convert("RGB")
 
-    cmd = [
-    "gs",
-    "-sDEVICE=pdfwrite",
-    "-dCompatibilityLevel=1.4",
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG", quality=30, optimize=True)
+        return buffer.getvalue()
 
-    # 🔥 FORCE COMPRESSION (key difference)
-    "-dPDFSETTINGS=/screen",
+    def compress_pdfs(input_path: str, output_path: str):
+        reader = PdfReader(input_path)
+        writer = PdfWriter()
 
-    "-dColorImageDownsampleType=/Bicubic",
-    "-dColorImageResolution=50",
+        for page in reader.pages:
+            # This keeps structure but does NOT fully extract images yet
+            writer.add_page(page)
 
-    "-dGrayImageDownsampleType=/Bicubic",
-    "-dGrayImageResolution=50",
+        with open(output_path, "wb") as f:
+            writer.write(f)
 
-    "-dMonoImageResolution=50",
+        return output_path
 
-    "-dDownsampleColorImages=true",
-    "-dDownsampleGrayImages=true",
-    "-dDownsampleMonoImages=true",
+    def final_optimize(input_path):
+        output_path = f"/tmp/final_{uuid.uuid4().hex}.pdf"
 
-    "-dDetectDuplicateImages=true",
+        cmd = [
+            "gs",
+            "-sDEVICE=pdfwrite",
+            "-dCompatibilityLevel=1.4",
 
-    "-dCompressFonts=true",
-    "-dSubsetFonts=true",
+            # 🔥 final compression pass
+            "-dPDFSETTINGS=/screen",
 
-    "-dNOPAUSE",
-    "-dBATCH",
-    "-dQUIET",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
 
-    f"-sOutputFile={output_path}",
-    input_path
-]
-    subprocess.run(cmd, check=True)
+            f"-sOutputFile={output_path}",
+            input_path
+        ]
 
-    return output_path
+        subprocess.run(cmd, check=True)
+        return output_path
+
+    def compress_pdf(input_path):
+        step1 = compress_pdf_ilovepdf(input_path, "/tmp/step1.pdf")
+        step2 = final_optimize(step1)
+        return step2
+    
