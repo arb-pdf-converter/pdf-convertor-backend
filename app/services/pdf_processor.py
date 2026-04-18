@@ -53,17 +53,34 @@ class PDFProcessor:
     }
 
     cmd = [
-        "gs",
-        "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.4",
-        f"-dPDFSETTINGS={quality_map.get(quality, '/ebook')}",
-        "-dNOPAUSE",
-        "-dBATCH",
-        "-dQUIET",
-        f"-sOutputFile={output_path}",
-        input_path
-    ]
+    "gs",
+    "-sDEVICE=pdfwrite",
+    "-dCompatibilityLevel=1.4",
 
+    # 🔥 MAX compression
+    "-dPDFSETTINGS=/screen",
+
+    "-dDownsampleColorImages=true",
+    "-dColorImageResolution=72",
+
+    "-dDownsampleGrayImages=true",
+    "-dGrayImageResolution=72",
+
+    "-dDownsampleMonoImages=true",
+    "-dMonoImageResolution=72",
+
+    "-dColorImageFilter=/DCTEncode",
+    "-dGrayImageFilter=/DCTEncode",
+    "-dDetectDuplicateImages=true",
+    "-dCompressFonts=true",
+    "-dSubsetFonts=true",
+    "-dNOPAUSE",
+    "-dBATCH",
+    "-dQUIET",
+
+    f"-sOutputFile={output_path}",
+    input_path
+]
     subprocess.run(cmd, check=True)
 
     return output_path
