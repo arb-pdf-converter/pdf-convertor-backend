@@ -42,60 +42,75 @@ class PDFProcessor:
 # ---------------- COMPRESS ----------------
     @staticmethod
     def compress_pdf(pdf_bytes: bytes, level: str) -> bytes:
-        """Ghostscript: 70-90% reduction GUARANTEED"""
+        """Ghostscript with proper error handling"""
+        import os
+        import tempfile
+        import subprocess
+    
         try:
-            # Ghostscript compression levels
-            gs_levels = {
-                "30": "/default",      # Screen (72dpi)
-                "50": "/ebook",        # Ebook (150dpi) 
-                "80": "/printer"       # Printer (300dpi)
+            # Ghostscript settings
+            gs_settings = {
+                "30": "/screen",     # 72 DPI
+                "50": "/ebook",      # 150 DPI  
+                "80": "/printer"     # 300 DPI
             }
-            gs_level = gs_levels.get(level, "/ebook")
+            setting = gs_settings.get(level, "/ebook")
+        
+            # Create secure temp directory
+            with tempfile.TemporaryDirectory() as temp_dir:
+                input_path = os.path.join(temp_dir, "input.pdf")
+                output_path = os.path.join(temp_dir, "output.pdf")
             
-            # Write input to temp file
-            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as input_file:
-                input_file.write(pdf_bytes)
-                input_path = input_file.name
+                # Write input
+                with open(input_path, "wb") as f:
+                    f.write(pdf_bytes)
             
-            # Output temp file
-            output_path = input_path.replace('.pdf', '_compressed.pdf')
+                # Ghostscript command
+                cmd = [
+                    "gs",
+                    "-q",                    # Quiet
+                    "-dNOPAUSE",
+                    "-dBATCH", 
+                    "-dSAFER",
+                    "-sDEVICE=pdfwrite",
+                    f"-dCompatibilityLevel=1.4",
+                    f"-dPDFSETTINGS={setting}",
+                    f"-dNOPUBFONTS",
+                    f"-sOutputFile={output_path}",
+                    input_path
+                ]
             
-            # Ghostscript command - REAL COMPRESSION
-            cmd = [
-                'gs',
-                '-sDEVICE=pdfwrite',
-                f'-dCompatibilityLevel=1.4',
-                f'-dPDFSETTINGS={gs_level}',
-                f'-dNOPAUSE',
-                f'-dQUIET',
-                f'-dBATCH',
-                f'-sOutputFile={output_path}',
-                input_path
-            ]
+                # Execute
+                result = subprocess.run(
+                    cmd, 
+                    capture_output=True, 
+                    text=True,
+                    timeout=60
+                )
             
-            # Run Ghostscript
-            result = subprocess.run(cmd, capture_output=True, text=True)
+                # Check output file exists and has size
+                if not os.path.exists(output_path):
+                    print("❌ Ghostscript: No output file")
+                    return pdf_bytes
             
-            # Cleanup input
-            subprocess.run(['rm', input_path])
+                output_size = os.path.getsize(output_path)
+                if output_size < 1024:  # Less than 1KB = failed
+                    print("❌ Ghostscript: Output too small")
+                    return pdf_bytes
             
-            if result.returncode != 0:
-                print(f"Ghostscript error: {result.stderr}")
-                return pdf_bytes
+                # Read result
+                with open(output_path, "rb") as f:
+                    compressed_bytes = f.read()
             
-            # Read compressed output
-            with open(output_path, 'rb') as f:
-                compressed_bytes = f.read()
+                orig_size = len(pdf_bytes) / (1024*1024)
+                new_size = len(compressed_bytes) / (1024*1024)
             
-            # Cleanup output
-            subprocess.run(['rm', output_path])
+                print(f"🎉 SUCCESS {level}: {orig_size:.1f}MB → {new_size:.1f}MB")
+                return compressed_bytes
             
-            orig_size = len(pdf_bytes) / (1024*1024)
-            new_size = len(compressed_bytes) / (1024*1024)
-            print(f"🎉 Ghostscript {level}: {orig_size:.1f}MB → {new_size:.1f}MB ({((1-new_size/orig_size)*100):.0f}% ↓)")
-            
-            return compressed_bytes
-            
+        except subprocess.TimeoutExpired:
+            print("⏰ Ghostscript timeout")
+            return pdf_bytes
         except Exception as e:
-            print(f"Compression failed: {e}")
+            print(f"❌ Error: {e}")
             return pdf_bytes
