@@ -54,7 +54,12 @@ class PDFProcessor:
                 "50": "/ebook",      # 150 DPI  
                 "80": "/printer"     # 300 DPI
             }
-            setting = gs_settings.get(level, "/ebook")
+            if level == "30":
+                resolution = "72"
+            elif level == "50":
+                resolution = "150"
+            else:
+                resolution = "300"
         
             # Create secure temp directory
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -68,18 +73,33 @@ class PDFProcessor:
                 # Ghostscript command
                 cmd = [
                     "gs",
-                    "-q",                    # Quiet
-                    "-dNOPAUSE",
-                    "-dBATCH", 
-                    "-dSAFER",
                     "-sDEVICE=pdfwrite",
-                    f"-dCompatibilityLevel=1.4",
-                    f"-dPDFSETTINGS={setting}",
-                    f"-dNOPUBFONTS",
+                    "-dCompatibilityLevel=1.4",
+                    "-dNOPAUSE",
+                    "-dBATCH",
+                    "-dSAFER",
+
+                # 🔥 FORCE real compression
+                    "-dDetectDuplicateImages=true",
+                    "-dCompressFonts=true",
+                    "-dSubsetFonts=true",
+
+                # 🔥 Image compression
+                    "-dDownsampleColorImages=true",
+                    "-dDownsampleGrayImages=true",
+                    "-dDownsampleMonoImages=true",
+
+                    "-dColorImageDownsampleType=/Bicubic",
+                    "-dGrayImageDownsampleType=/Bicubic",
+                    "-dMonoImageDownsampleType=/Bicubic",
+
+                    f"-dColorImageResolution={resolution}",
+                    f"-dGrayImageResolution={resolution}",
+                    f"-dMonoImageResolution={resolution}",
+
                     f"-sOutputFile={output_path}",
                     input_path
                 ]
-            
                 # Execute
                 result = subprocess.run(
                     cmd, 
