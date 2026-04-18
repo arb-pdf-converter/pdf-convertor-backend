@@ -57,23 +57,26 @@ class PDFProcessor:
     "-sDEVICE=pdfwrite",
     "-dCompatibilityLevel=1.4",
 
-    # 🔥 MAX compression
+    # 🔥 FORCE COMPRESSION (key difference)
     "-dPDFSETTINGS=/screen",
 
+    "-dColorImageDownsampleType=/Bicubic",
+    "-dColorImageResolution=50",
+
+    "-dGrayImageDownsampleType=/Bicubic",
+    "-dGrayImageResolution=50",
+
+    "-dMonoImageResolution=50",
+
     "-dDownsampleColorImages=true",
-    "-dColorImageResolution=72",
-
     "-dDownsampleGrayImages=true",
-    "-dGrayImageResolution=72",
-
     "-dDownsampleMonoImages=true",
-    "-dMonoImageResolution=72",
 
-    "-dColorImageFilter=/DCTEncode",
-    "-dGrayImageFilter=/DCTEncode",
     "-dDetectDuplicateImages=true",
+
     "-dCompressFonts=true",
     "-dSubsetFonts=true",
+
     "-dNOPAUSE",
     "-dBATCH",
     "-dQUIET",
