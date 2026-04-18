@@ -72,43 +72,14 @@ class PDFProcessor:
             
                 # Ghostscript command
                 cmd = [
-    "gs",
-    "-sDEVICE=pdfwrite",
-    "-dCompatibilityLevel=1.4",
-    "-dNOPAUSE",
-    "-dBATCH",
-    "-dSAFER",
-
-    # 🔥 FORCE FULL REWRITE (VERY IMPORTANT)
-    "-dDetectDuplicateImages=true",
-    "-dCompressFonts=true",
-    "-dSubsetFonts=true",
-
-    # 🔥 FORCE IMAGE RECOMPRESSION
-    "-dAutoFilterColorImages=false",
-    "-dAutoFilterGrayImages=false",
-    "-dColorImageFilter=/DCTEncode",
-    "-dGrayImageFilter=/DCTEncode",
-
-    # 🔥 DOWN-SAMPLE IMAGES
-    "-dDownsampleColorImages=true",
-    "-dDownsampleGrayImages=true",
-    "-dDownsampleMonoImages=true",
-
-    "-dColorImageDownsampleType=/Bicubic",
-    "-dGrayImageDownsampleType=/Bicubic",
-    "-dMonoImageDownsampleType=/Subsample",
-
-    "-dColorImageResolution=72",
-    "-dGrayImageResolution=72",
-    "-dMonoImageResolution=300",
-
-    # 🔥 JPEG QUALITY (THIS MATTERS A LOT)
-    "-dJPEGQ=30",
-
-    f"-sOutputFile={output_path}",
-    input_path
-]
+                    "/usr/bin/gs",
+                    "-sDEVICE=pdfwrite",
+                    "-dNOPAUSE",
+                    "-dBATCH",
+                    "-dSAFER",
+                    "-sOutputFile=output.pdf",
+                    input_path
+                ]
                 # Execute
                 result = subprocess.run(
                     cmd, 
