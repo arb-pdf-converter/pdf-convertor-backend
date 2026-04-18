@@ -1,5 +1,5 @@
 from pypdf import PdfReader, PdfWriter
-from pikepdf import Pdf, parse_compressed_stream, ObjectStreamMode  # 👈 ADD PIKEPDF
+from pikepdf import Pdf, ObjectStreamMode  # 👈 ADD PIKEPDF
 from PIL import Image
 import img2pdf
 from reportlab.pdfgen import canvas
@@ -43,48 +43,32 @@ class PDFProcessor:
     def compress_pdf(pdf_bytes: bytes, level: str) -> bytes:
         """Real PDF compression using pikepdf"""
         try:
-            # Compression levels: higher number = more aggressive
             compression_map = {
-                "30": 1,  # Light
-                "50": 2,  # Medium  
-                "80": 3   # Heavy
+                "30": {"image_quality": 85, "downsample": False},
+                "50": {"image_quality": 75, "downsample": True},
+                "80": {"image_quality": 60, "downsample": True}
             }
-            compression_level = compression_map.get(level, 2)
+            settings = compression_map.get(level, {"image_quality": 75, "downsample": True})
             
-            # Open PDF with pikepdf
             pdf = Pdf.open(BytesIO(pdf_bytes))
             
-            # Apply compression based on level
-            if compression_level >= 1:
-                # Remove duplicate objects and optimize structure
-                pdf.remove_unreferenced_resources()
-                
-            if compression_level >= 2:
-                # Compress images and streams
-                for page in pdf.pages:
-                    for img in page.images:
-                        img.filter = "DCTDecode"  # JPEG compression
-                        img.colorspace = "DeviceRGB"
-                
-                # Compress all streams
-                pdf.save(BytesIO(), 
-                        object_stream_mode=ObjectStreamMode.generate,
-                        stream_decode_level=parse_compressed_stream.all,
-                        downsample_images=True,
-                        image_quality=90 - (compression_level * 20))  # 70-90 quality
-                
-            else:
-                # Light compression only
-                pdf.save(BytesIO(), 
-                        object_stream_mode=ObjectStreamMode.generate,
-                        stream_decode_level=parse_compressed_stream.all)
-            
+            # Save with compression
             output = BytesIO()
-            pdf.save(output)
+            pdf.save(
+                output,
+                object_stream_mode=ObjectStreamMode.generate,
+                normalize_content=True,
+                remove_duplicate_objects=True,
+                image_quality=settings["image_quality"],
+                downsample_images=settings["downsample"],
+                jpeg_filter=True
+            )
             output.seek(0)
-            return output.read()
+            
+            result = output.read()
+            print(f"Compression {level}: {len(pdf_bytes)/1024:.1f}KB → {len(result)/1024:.1f}KB")
+            return result
             
         except Exception as e:
-            print(f"Compression error: {e}")
-            # Fallback: return original
-            return pdf_bytes
+            print(f"Compression failed: {e}")
+            return pdf_bytes  # Return original if compression fails
