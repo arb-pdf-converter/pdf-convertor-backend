@@ -1,4 +1,5 @@
 from pypdf import PdfReader, PdfWriter
+from pikepdf import Pdf, parse_compressed_stream, ObjectStreamMode  # 👈 ADD PIKEPDF
 from PIL import Image
 import img2pdf
 from reportlab.pdfgen import canvas
