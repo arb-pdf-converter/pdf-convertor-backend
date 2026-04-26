@@ -12,7 +12,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://pdf-convertor-backend-i30o.onrender.com"
+        "https://pdf-convertor-backend-i30o.onrender.com",
+        "https://arb-service.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
